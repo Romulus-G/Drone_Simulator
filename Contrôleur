@@ -1,1 +1,65 @@
+% Constantes 
+m = 1.3; % Masse du drone (kg)
+g = 9.81; % Gravité (m/s^2)
+b = 1.0e-7; % Coefficient de poussée
+d = 0.275; % Distance entre le centre et les rotors (m)
+k = 7.8e-6; % Coefficient de traînée (drag)
+
+% Inputs : valeurs initiales
+p = [0; 0; 0]; % Position initiale (m)
+v = [0; 0; 0]; % Vitesse initiale (m/s)
+omega = [0; 0; 0]; % Vitesse angulaire initiale (rad/s)
+wm = [400; 400; 400; 400]; % Vitesses initiales des moteurs (rad/s)
+q = quaternion([1, 0, 0, 0]); % Orientation initiale
+
+% Gains 
+Kp_p = 5; % Gain proportionnel pour la position
+Kd_p = 3; % Gain dérivé pour la position
+Kp_tau = 5; % Gain proportionnel pour les moments
+Kd_tau = 3; % Gain dérivé pour les moments
+
+% Valeurs cibles 
+p_f = [0; 0; 1]; % Position cible (m)
+v_f = [0; 0; 0]; % Vitesse cible (m/s)
+q_f = quaternion([1, 0, 0, 0]); % Orientation cible
+omega_f = [0; 0; 0]; % Vitesse angulaire cible (rad/s)
+
+% Matrice de transformation (A)
+A = [-b, -b, -b, -b; 
+      0,  d*b, 0, -d*b; 
+      d*b,  0, -d*b,  0; 
+      k,  -k,  k, -k];
+
+% Contrôle de position
+error_p = p_f - p;      % Erreur de position
+error_v = v_f - v;      % Erreur de vitesse
+F_f = Kp_p * error_p + Kd_p * error_v + [0; 0; m*g]; % Force requise
+T = norm(F_f);          % Poussée totale
+
+% Calcul des torques pour l'orientation
+error_q = compact(q_f - q); % Erreur d'orientation
+error_omega = omega_f - omega; % Erreur de vitesse angulaire
+tau = Kp_tau * error_q(2:4)' + Kd_tau * error_omega; % Moments de contrôle
+
+% Commande des moteurs
+F = [T; tau(1); tau(2); tau(3)]; % Force totale et torques
+W_m_r = inv(A) * F;
+
+% Je sais pas si on rajoute ça 
+wm1r = sqrt(max(W_m_r(1), 0));
+wm2r = sqrt(max(W_m_r(2), 0));
+wm3r = sqrt(max(W_m_r(3), 0));
+wm4r = sqrt(max(W_m_r(4), 0));
+
+% Résultats
+disp('Vitesses des moteurs (rad/s):');
+disp([wm1r, wm2r, wm3r, wm4r]);
+
+disp('Poussée totale (N):');
+disp(T);
+
+disp('Torques (N·m):');
+disp(tau);
+
+
 
