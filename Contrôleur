@@ -51,7 +51,7 @@ wm2r = sqrt(max(W_m_r(2), 0));
 wm3r = sqrt(max(W_m_r(3), 0));
 wm4r = sqrt(max(W_m_r(4), 0));
 
-% Résultats
+% Vérifier cette partie
 disp('Vitesses des moteurs (rad/s):');
 disp([wm1r, wm2r, wm3r, wm4r]);
 
