@@ -45,21 +45,5 @@ tau = Kp_tau * error_q(2:4)' + Kd_tau * error_omega; % Moments de contrôle
 F = [T; tau(1); tau(2); tau(3)]; % Force totale et torques
 W_m_r = inv(A) * F;
 
-% Je sais pas si on rajoute ça 
-wm1r = sqrt(max(W_m_r(1), 0));
-wm2r = sqrt(max(W_m_r(2), 0));
-wm3r = sqrt(max(W_m_r(3), 0));
-wm4r = sqrt(max(W_m_r(4), 0));
-
-% Vérifier cette partie
-disp('Vitesses des moteurs (rad/s):');
-disp([wm1r, wm2r, wm3r, wm4r]);
-
-disp('Poussée totale (N):');
-disp(T);
-
-disp('Torques (N·m):');
-disp(tau);
-
 
 
