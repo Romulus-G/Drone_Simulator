@@ -7,49 +7,54 @@ t = p(1,:);
 p = p(2:end,:)';
 q = q(2:end,:)';
 
-drone_animation(p,q,t);
+p1 = p(:,1);
+p2 = p(:,2);    
+p3 = p(:,3);
 
-function drone_animation(p,q,t)
-    p1 = p(:,1);
-    p2 = p(:,2);    
-    p3 = p(:,3);
+f1 = figure;
+% ax = [subplot(2,2,1), subplot(2,2,2), subplot(2,2,3), subplot(2,2,4)];
 
-    fig = figure('pos', [0 50 800 600]);
-    ax = gca;
-    grid on;
-    axis equal;
-    set(ax, 'ZDir','reverse');
-    set(ax, 'YDir','reverse');
-    view(68,53);
+h = tiledlayout(2,2, Padding="compact", TileSpacing="compact");
+ax = [nexttile, nexttile, nexttile, nexttile];
 
-    d = 0.6;
-    xlim([min(p1) - d, max(p1) + d]); 
-    ylim([min(p2) - d, max(p2) + d]);
-    zlim([min(p3) - d, max(p3) + d]);
-    title('Drone Animation');
-    xlabel('X[m]'); ylabel('Y[m]'); zlabel('Z[m]');
-    hold(a, 'on');
-    
-    drone = make_drone();
+grid(ax, "on");
+axis(ax, "equal");
+set(ax, 'ZDir','reverse');
+set(ax, 'YDir','reverse');
+
+d = 0.6;
+xlim(ax, [min(p1) - d, max(p1) + d]); 
+ylim(ax, [min(p2) - d, max(p2) + d]);
+zlim(ax, [min(p3) - d, max(p3) + d]);
+
+xlabel(ax, 'X[m]'); ylabel(ax, 'Y[m]'); zlabel(ax, 'Z[m]');
+hold(ax, 'on');
+
+view(ax(1), 0, 0);
+view(ax(2), 90, 0);
+view(ax(3), 0, 90);
+view(ax(4), 68, 53);
+
+for i = 1:4
+    drone = make_drone(ax(i));
+    ax_M_drone(i) = hgtransform(Parent=ax(i));
+    drone_M_mesh(i) = hgtransform(Parent=ax_M_drone(i), Matrix=makehgtform('xrotate', pi));
+    set(drone, Parent=drone_M_mesh(i));
+    objective = plot3(ax(i), 0, 0, 0, 'ro', 'MarkerSize', 3, 'MarkerFaceColor', 'b');
+    trajectory(i) = plot3(ax(i), NaN, NaN, NaN, 'b-', LineWidth=1);
+end
    
-    ax_M_drone = hgtransform(Parent=ax);
-    drone_M_mesh = hgtransform(Parent=ax_M_drone, Matrix=makehgtform('xrotate', pi));
-    set(drone, Parent=drone_M_mesh);
-
-    plot3(0, 0, 0, 'ro', 'MarkerSize', 3, 'MarkerFaceColor', 'b');
-    trajectory = plot3(ax, NaN, NaN, NaN, 'b-', LineWidth=1);
-       
-    dt = diff(t);
-    for i = 1:length(dt)
-        set(trajectory, XData=p1(1:i), YData=p2(1:i), ZData=p3(1:i));
-        set(ax_M_drone, Matrix = trvec2tform(p(i,:)) * quat2tform(q(i,:)));
-        drawnow
-        pause(dt(i));
-        title(t(i));
-    end
+dt = diff(t);
+for i = 1:length(dt)
+    set(trajectory, XData=p1(1:i), YData=p2(1:i), ZData=p3(1:i));
+    set(ax_M_drone, Matrix = trvec2tform(p(i,:)) * quat2tform(q(i,:)));
+    drawnow
+    pause(dt(i));
+    title(ax, t(i));
 end
 
-function drone = make_drone()
+
+function drone = make_drone(ax)
     % Written by Jitendra Singh
     %% Define design parameters
     D2R = pi/180;
@@ -76,27 +81,27 @@ function drone = make_drone()
 
     %% Design Different parts
     % design the base square
-     drone(1) = patch([base(1,:)],[base(2,:)],[base(3,:)],'r');
-     drone(2) = patch([base(1,:)],[base(2,:)],[base(3,:)+H],'r');
+     drone(1) = patch(ax, [base(1,:)],[base(2,:)],[base(3,:)],'r');
+     drone(2) = patch(ax, [base(1,:)],[base(2,:)],[base(3,:)+H],'r');
      alpha(drone(1:2),0.7);
     % design 2 perpendicular legs of quadcopter 
      [xcylinder, ycylinder, zcylinder] = cylinder([H/2 H/2]);
-     drone(3) =  surface(b*zcylinder-b/2,ycylinder,xcylinder+H/2,'facecolor','b');
-     drone(4) =  surface(ycylinder,b*zcylinder-b/2,xcylinder+H/2,'facecolor','b') ; 
+     drone(3) =  surface(ax, b*zcylinder-b/2,ycylinder,xcylinder+H/2,'facecolor','b');
+     drone(4) =  surface(ax, ycylinder,b*zcylinder-b/2,xcylinder+H/2,'facecolor','b') ; 
      alpha(drone(3:4),0.6);
     % design 4 cylindrical motors 
-     drone(5) = surface(xcylinder+b/2,ycylinder,H_m*zcylinder+H/2,'facecolor','r');
-     drone(6) = surface(xcylinder-b/2,ycylinder,H_m*zcylinder+H/2,'facecolor','r');
-     drone(7) = surface(xcylinder,ycylinder+b/2,H_m*zcylinder+H/2,'facecolor','r');
-     drone(8) = surface(xcylinder,ycylinder-b/2,H_m*zcylinder+H/2,'facecolor','r');
+     drone(5) = surface(ax, xcylinder+b/2,ycylinder,H_m*zcylinder+H/2,'facecolor','r');
+     drone(6) = surface(ax, xcylinder-b/2,ycylinder,H_m*zcylinder+H/2,'facecolor','r');
+     drone(7) = surface(ax, xcylinder,ycylinder+b/2,H_m*zcylinder+H/2,'facecolor','r');
+     drone(8) = surface(ax, xcylinder,ycylinder-b/2,H_m*zcylinder+H/2,'facecolor','r');
      alpha(drone(5:8),0.7);
     % design 4 propellers
-     drone(9)  = patch(xp+b/2,yp,zp+(H_m+H/2),'c','LineWidth',0.5);
-     drone(10) = patch(xp-b/2,yp,zp+(H_m+H/2),'c','LineWidth',0.5);
-     drone(11) = patch(xp,yp+b/2,zp+(H_m+H/2),'p','LineWidth',0.5);
-     drone(12) = patch(xp,yp-b/2,zp+(H_m+H/2),'p','LineWidth',0.5);
+     drone(9)  = patch(ax, xp+b/2,yp,zp+(H_m+H/2),'c','LineWidth',0.5);
+     drone(10) = patch(ax, xp-b/2,yp,zp+(H_m+H/2),'c','LineWidth',0.5);
+     drone(11) = patch(ax, xp,yp+b/2,zp+(H_m+H/2),'p','LineWidth',0.5);
+     drone(12) = patch(ax, xp,yp-b/2,zp+(H_m+H/2),'p','LineWidth',0.5);
 
-     drone(13) = quiver3(0,0,0, 0.7,0,0, LineWidth=2, MaxHeadSize=2, Color='r');
+     drone(13) = quiver3(ax, 0,0,0, 0.7,0,0, LineWidth=2, MaxHeadSize=2, Color='r');
 
      alpha(drone(9:12),0.3);
 end
