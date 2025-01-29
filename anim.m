@@ -1,40 +1,51 @@
+close all;
+
 p = load("p.mat").ans;
 q = load("q.mat").ans;
 
+t = p(1,:);
 p = p(2:end,:)';
 q = q(2:end,:)';
 
-disp(size(p))
+drone_animation(p,q,t);
 
-drone_animation(p,q);
+function drone_animation(p,q,t)
+    p1 = p(:,1);
+    p2 = p(:,2);    
+    p3 = p(:,3);
 
-function drone_animation(p,q)
-
-    %% Define Figure plot
     fig = figure('pos', [0 50 800 600]);
-    hg = gca;
-    view(68,53);
+    ax = gca;
     grid on;
     axis equal;
-    xlim([-3 3]); ylim([-3 3]); zlim([-3 3]);
+    set(ax, 'ZDir','reverse');
+    set(ax, 'YDir','reverse');
+    view(68,53);
+
+    d = 0.6;
+    xlim([min(p1) - d, max(p1) + d]); 
+    ylim([min(p2) - d, max(p2) + d]);
+    zlim([min(p3) - d, max(p3) + d]);
     title('Drone Animation');
     xlabel('X[m]'); ylabel('Y[m]'); zlabel('Z[m]');
-    hold(gca, 'on');
+    hold(a, 'on');
     
     drone = make_drone();
-    combinedobject = hgtransform('parent', hg);
-    set(drone,'parent',combinedobject)
+   
+    ax_M_drone = hgtransform(Parent=ax);
+    drone_M_mesh = hgtransform(Parent=ax_M_drone, Matrix=makehgtform('xrotate', pi));
+    set(drone, Parent=drone_M_mesh);
 
     plot3(0, 0, 0, 'ro', 'MarkerSize', 3, 'MarkerFaceColor', 'b');
-
-    for i = 1:length(q)
-        translation = makehgtform('translate', p(i,:));
-        qs = q(i,1);
-        qv = q(i,2:4);
-        rotation = makehgtform('axisrotate', qv, 2 * atan2(norm(qv), qs));
-        set(combinedobject,'matrix', translation * rotation);
+    trajectory = plot3(ax, NaN, NaN, NaN, 'b-', LineWidth=1);
+       
+    dt = diff(t);
+    for i = 1:length(dt)
+        set(trajectory, XData=p1(1:i), YData=p2(1:i), ZData=p3(1:i));
+        set(ax_M_drone, Matrix = trvec2tform(p(i,:)) * quat2tform(q(i,:)));
         drawnow
-        pause(0.01);
+        pause(dt(i));
+        title(t(i));
     end
 end
 
@@ -45,8 +56,8 @@ function drone = make_drone()
     R2D = 180/pi;
     b   = 0.6;     % the length of total square cover by whole body of quadcopter in meter
     a   = b/3;     % the legth of small square base of quadcopter(b/4)
-    H   = 0.06;    % hight of drone in Z direction (4cm)
-    H_m = H + H/2; % hight of motor in z direction (5 cm)
+    H   = 0.06;    % height of drone in Z direction (4cm)
+    H_m = H + H/2; % height of motor in z direction (5 cm)
     r_p = b/4;     % radius of propeller
     
     %% Conversions
@@ -84,5 +95,8 @@ function drone = make_drone()
      drone(10) = patch(xp-b/2,yp,zp+(H_m+H/2),'c','LineWidth',0.5);
      drone(11) = patch(xp,yp+b/2,zp+(H_m+H/2),'p','LineWidth',0.5);
      drone(12) = patch(xp,yp-b/2,zp+(H_m+H/2),'p','LineWidth',0.5);
+
+     drone(13) = quiver3(0,0,0, 0.7,0,0, LineWidth=2, MaxHeadSize=2, Color='r');
+
      alpha(drone(9:12),0.3);
 end
