@@ -1,58 +1,42 @@
-close all;
-
-p = load("p.mat").ans;
-q = load("q.mat").ans;
-
-t = p(1,:);
-p = p(2:end,:)';
-q = q(2:end,:)';
-
-p1 = p(:,1);
-p2 = p(:,2);    
-p3 = p(:,3);
-
-f1 = figure;
-% ax = [subplot(2,2,1), subplot(2,2,2), subplot(2,2,3), subplot(2,2,4)];
-
-h = tiledlayout(2,2, Padding="compact", TileSpacing="compact");
-ax = [nexttile, nexttile, nexttile, nexttile];
-
-grid(ax, "on");
-axis(ax, "equal");
-set(ax, 'ZDir','reverse');
-set(ax, 'YDir','reverse');
-
-d = 0.6;
-xlim(ax, [min(p1) - d, max(p1) + d]); 
-ylim(ax, [min(p2) - d, max(p2) + d]);
-zlim(ax, [min(p3) - d, max(p3) + d]);
-
-xlabel(ax, 'X[m]'); ylabel(ax, 'Y[m]'); zlabel(ax, 'Z[m]');
-hold(ax, 'on');
-
-view(ax(1), 0, 0);
-view(ax(2), 90, 0);
-view(ax(3), 0, 90);
-view(ax(4), 68, 53);
-
-for i = 1:4
-    drone = make_drone(ax(i));
-    ax_M_drone(i) = hgtransform(Parent=ax(i));
-    drone_M_mesh(i) = hgtransform(Parent=ax_M_drone(i), Matrix=makehgtform('xrotate', pi));
-    set(drone, Parent=drone_M_mesh(i));
-    objective = plot3(ax(i), 0, 0, 0, 'ro', 'MarkerSize', 3, 'MarkerFaceColor', 'b');
-    trajectory(i) = plot3(ax(i), NaN, NaN, NaN, 'b-', LineWidth=1);
+function animate(p, q, p_ref, p1, p2, p3, t, ax)   
+    grid(ax, "on");
+    axis(ax, "equal");
+    set(ax, 'ZDir','reverse');
+    set(ax, 'YDir','reverse');
+    d = 0.6;
+    xlim(ax, [min(p1) - d, max(p1) + d]); 
+    ylim(ax, [min(p2) - d, max(p2) + d]);
+    zlim(ax, [min(p3) - d, max(p3) + d]);
+    xlabel(ax, 'x [m]');
+    ylabel(ax, 'y [m]');
+    zlabel(ax, 'z [m]');
+    hold(ax, 'on');
+    
+    view(ax(1), 0, 0);
+    view(ax(2), 90, 0);
+    view(ax(3), 0, 90);
+    view(ax(4), 135, 40);
+    
+    for i = 1:4
+        drone = make_drone(ax(i));
+        ax_M_drone(i) = hgtransform(Parent=ax(i));
+        drone_M_mesh(i) = hgtransform(Parent=ax_M_drone(i), Matrix=makehgtform('xrotate', pi));
+        set(drone, Parent=drone_M_mesh(i));
+        % plot3(ax(i), 0, 0, 0, 'ro', 'MarkerSize', 3, 'MarkerFaceColor', 'b');
+        trajectory(i) = plot3(ax(i), NaN, NaN, NaN, 'b-', LineWidth=1);
+        plot3(ax(i), p_ref(1,:), p_ref(2,:), p_ref(3,:), 'r-', LineWidth=1);
+    end
+    set(ax_M_drone, Matrix = trvec2tform(p(1,:)) * quat2tform(q(1,:)));
+    
+    for i = 1:length(t)
+        set(trajectory, XData=p1(1:i), YData=p2(1:i), ZData=p3(1:i));
+        set(ax_M_drone, Matrix = trvec2tform(p(i,:)) * quat2tform(q(i,:)));
+        drawnow
+        % pause(0.003);
+        view(ax(4), 135 + 3 * sin(i/10), 40 + 3 * sin(i/10));
+        title(ax, t(i));
+    end
 end
-   
-dt = diff(t);
-for i = 1:length(dt)
-    set(trajectory, XData=p1(1:i), YData=p2(1:i), ZData=p3(1:i));
-    set(ax_M_drone, Matrix = trvec2tform(p(i,:)) * quat2tform(q(i,:)));
-    drawnow
-    pause(dt(i));
-    title(ax, t(i));
-end
-
 
 function drone = make_drone(ax)
     % Written by Jitendra Singh
